@@ -1,42 +1,42 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수의학 AI 어시스턴트</title>
+    <title>수의학 임상 참고 시스템</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header class="header">
             <div class="logo">
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="18" fill="url(#gradient)" opacity="0.2"/>
-                    <path d="M20 8L24 16H16L20 8Z" fill="url(#gradient)"/>
-                    <circle cx="20" cy="24" r="6" fill="url(#gradient)"/>
-                    <defs>
-                        <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40">
-                            <stop offset="0%" stop-color="#667eea"/>
-                            <stop offset="100%" stop-color="#764ba2"/>
-                        </linearGradient>
-                    </defs>
+                    <circle cx="20" cy="20" r="18" fill="white" opacity="0.2" />
+                    <path d="M20 10 L24 18 L20 16 L16 18 Z" fill="white" />
+                    <circle cx="20" cy="25" r="5" stroke="white" stroke-width="2" fill="none" />
                 </svg>
-                <h1>수의학 AI 어시스턴트</h1>
+                <h1>수의학 임상 참고 시스템</h1>
             </div>
-            <p class="subtitle">신뢰할 수 있는 수의학 자료 기반 답변</p>
+            <p class="subtitle">수의사 진료를 위한 전문 자료 기반 AI 어시스턴트</p>
         </header>
 
         <div class="chat-container" id="chatContainer">
             <div class="welcome-message">
-                <div class="welcome-icon">🐾</div>
-                <h2>안녕하세요!</h2>
-                <p>수의학 관련 질문을 입력해주세요.<br>제공된 자료를 기반으로 정확한 답변을 드리겠습니다.</p>
+                <div class="welcome-icon">🩺</div>
+                <h2>임상 참고 시스템에 오신 것을 환영합니다</h2>
+                <p>수의학 전문 자료를 기반으로 진료에 필요한 정보를 제공합니다.<br>
+                    증례, 치료 프로토콜, 약물 정보 등을 질문해 주세요.</p>
                 <div class="example-questions">
                     <p class="example-title">예시 질문:</p>
-                    <button class="example-btn" onclick="askExample('강아지가 구토를 할 때 어떻게 해야 하나요?')">강아지 구토 대처법</button>
-                    <button class="example-btn" onclick="askExample('초콜릿 중독 증상은 무엇인가요?')">초콜릿 중독 증상</button>
-                    <button class="example-btn" onclick="askExample('열사병 응급처치 방법을 알려주세요')">열사병 응급처치</button>
+                    <button class="example-btn" onclick="askExample('강아지 구토 감별진단 및 치료 프로토콜을 알려주세요')">구토 감별진단 및
+                        치료</button>
+                    <button class="example-btn" onclick="askExample('초콜릿 중독 시 응급처치 및 해독제 용량을 알려주세요')">초콜릿 중독
+                        응급처치</button>
+                    <button class="example-btn" onclick="askExample('열사병 환자의 체온 관리 및 수액 요법을 설명해주세요')">열사병 치료
+                        프로토콜</button>
                 </div>
             </div>
         </div>
@@ -44,15 +44,11 @@
         <div class="input-container">
             <form id="questionForm" onsubmit="askQuestion(event)">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="questionInput" 
-                        placeholder="질문을 입력하세요..." 
-                        rows="1"
-                        maxlength="500"
-                    ></textarea>
+                    <textarea id="questionInput" placeholder="임상 질문을 입력하세요..." rows="1" maxlength="500"></textarea>
                     <button type="submit" id="sendBtn" class="send-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                         </svg>
                     </button>
                 </div>
@@ -71,14 +67,14 @@
         const charCount = document.getElementById('charCount');
 
         // Auto-resize textarea
-        questionInput.addEventListener('input', function() {
+        questionInput.addEventListener('input', function () {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             charCount.textContent = this.value.length;
         });
 
         // Handle Enter key (Shift+Enter for new line)
-        questionInput.addEventListener('keydown', function(e) {
+        questionInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 questionForm.dispatchEvent(new Event('submit'));
@@ -98,17 +94,17 @@
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            
+
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.textContent = text;
-            
+
             messageDiv.appendChild(contentDiv);
             chatContainer.appendChild(messageDiv);
-            
+
             // Scroll to bottom
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            
+
             return messageDiv;
         }
 
@@ -131,22 +127,22 @@
 
         async function askQuestion(event) {
             event.preventDefault();
-            
+
             const question = questionInput.value.trim();
             if (!question) return;
 
             // Add user message
             addMessage(question, true);
-            
+
             // Clear input
             questionInput.value = '';
             questionInput.style.height = 'auto';
             charCount.textContent = '0';
-            
+
             // Disable input while processing
             questionInput.disabled = true;
             sendBtn.disabled = true;
-            
+
             // Add loading message
             const loadingMsg = addLoadingMessage();
 
@@ -160,7 +156,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 // Remove loading message
                 loadingMsg.remove();
 
@@ -182,4 +178,5 @@
         }
     </script>
 </body>
+
 </html>

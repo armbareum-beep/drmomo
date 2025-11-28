@@ -15,7 +15,7 @@ from pinecone import Pinecone, ServerlessSpec
 import time
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
+from langchain_community.chains import RetrievalQA
 
 # Load environment variables
 load_dotenv()

@@ -195,6 +195,8 @@ def get_pinecone_vectorstore():
     
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
+        # Debug: Print available keys to help diagnose
+        print(f"❌ DEBUG: Available environment keys: {list(os.environ.keys())}")
         raise ValueError("OPENAI_API_KEY environment variable is not set")
         
     embeddings = OpenAIEmbeddings(api_key=openai_api_key)

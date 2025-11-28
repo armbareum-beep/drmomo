@@ -185,6 +185,27 @@ def load_and_process_documents(file_paths=None, folder_path=None):
             continue
     
     print("✅ All batches uploaded successfully!")
+    print("✅ All batches uploaded successfully!")
+    return vectorstore
+
+def get_pinecone_vectorstore():
+    """
+    Connects to the existing Pinecone index without loading new documents.
+    """
+    print("🔄 Connecting to Pinecone...")
+    embeddings = OpenAIEmbeddings()
+    
+    # Initialize Pinecone
+    pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+    index_name = "veterinary-rag"
+    
+    # Check if index exists
+    existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+    if index_name not in existing_indexes:
+        raise ValueError(f"Index {index_name} does not exist. Please run locally to upload documents first.")
+    
+    print(f"✅ Found existing Pinecone index: {index_name}")
+    vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
     return vectorstore
 
 

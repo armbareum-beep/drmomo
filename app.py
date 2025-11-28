@@ -12,7 +12,7 @@ app.secret_key = os.urandom(24)
 qa_chain = None
 
 def initialize_rag_system():
-    """Initialize the RAG system on startup"""
+    """Initialize the RAG system with Pinecone"""
     global qa_chain
     
     documents_folder = "documents"
@@ -24,11 +24,20 @@ def initialize_rag_system():
         pdf_file = os.path.join(documents_folder, "veterinary_guide.pdf")
         create_dummy_pdf(pdf_file)
     
-    print("📂 Loading documents...")
+    print("="*70)
+    print("🔄 Initializing Pinecone RAG System...")
+    print("="*70)
+    
     try:
+        # Process documents and upload to Pinecone
+        print("\n📂 Processing documents and connecting to Pinecone...")
         vectorstore = load_and_process_documents(folder_path=documents_folder)
+        
         qa_chain = create_rag_chain(vectorstore)
+        print("\n" + "="*70)
         print("✅ RAG system initialized successfully!")
+        print("="*70)
+        
     except Exception as e:
         print(f"❌ Error initializing RAG system: {e}")
         raise

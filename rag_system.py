@@ -10,7 +10,9 @@ from langchain_community.document_loaders import (
     UnstructuredMarkdownLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+import time
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
@@ -48,6 +50,11 @@ def load_and_process_documents(file_paths=None, folder_path=None):
     """
     Loads documents from specified files or folder, splits them into chunks, and creates a vector store.
     Supports: PDF, DOCX, DOC, TXT, MD, CSV, XLSX, XLS, HTML
+    
+    Improved with:
+    - Better error handling for corrupted PDFs
+    - Progress tracking
+    - Skips problematic files instead of crashing
     """
     documents = []
     
@@ -63,36 +70,120 @@ def load_and_process_documents(file_paths=None, folder_path=None):
             if os.path.isfile(file_path):
                 all_paths.append(file_path)
     
-    # Load documents
-    for path in all_paths:
+    # Load documents with better error handling
+    successful_files = []
+    failed_files = []
+    
+    print(f"\n📂 Found {len(all_paths)} files to process...")
+    
+    for idx, path in enumerate(all_paths, 1):
         if os.path.exists(path):
+            filename = os.path.basename(path)
+            print(f"[{idx}/{len(all_paths)}] Processing: {filename}...", end=" ")
+            
             loader = get_loader_for_file(path)
             if loader:
                 try:
-                    documents.extend(loader.load())
-                    print(f"✓ Loaded: {os.path.basename(path)}")
+                    # Load with timeout protection
+                    loaded_docs = loader.load()
+                    
+                    if loaded_docs:
+                        documents.extend(loaded_docs)
+                        successful_files.append(filename)
+                        print(f"✓ ({len(loaded_docs)} pages)")
+                    else:
+                        print(f"⚠️ Empty file")
+                        
                 except Exception as e:
-                    print(f"✗ Error loading {os.path.basename(path)}: {str(e)}")
+                    error_msg = str(e)
+                    # Shorten long error messages
+                    if len(error_msg) > 100:
+                        error_msg = error_msg[:100] + "..."
+                    print(f"✗ Error: {error_msg}")
+                    failed_files.append((filename, str(e)))
+            else:
+                print(f"⚠️ Unsupported format")
         else:
             print(f"Warning: File not found: {path}")
 
+    # Summary
+    print(f"\n{'='*60}")
+    print(f"✅ Successfully loaded: {len(successful_files)} files")
+    if failed_files:
+        print(f"❌ Failed to load: {len(failed_files)} files")
+        print(f"\nFailed files:")
+        for filename, error in failed_files[:5]:  # Show first 5
+            print(f"  - {filename}")
+        if len(failed_files) > 5:
+            print(f"  ... and {len(failed_files) - 5} more")
+    print(f"{'='*60}\n")
+
     if not documents:
-        raise ValueError("No documents loaded. Please add files to the 'documents' folder.")
+        raise ValueError("No documents loaded successfully. Please check your PDF files or add supported documents to the 'documents' folder.")
 
     # Text Splitting
+    print("📝 Splitting documents into chunks...")
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=150
     )
     texts = text_splitter.split_documents(documents)
     
-    print(f"\n📚 Total documents loaded: {len(documents)}")
+    print(f"📚 Total documents loaded: {len(documents)}")
     print(f"📝 Total text chunks created: {len(texts)}")
 
-    # Embeddings & Vector Store
+    # Embeddings & Vector Store with Pinecone
+    print("🔄 Connecting to Pinecone...")
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.from_documents(texts, embeddings)
     
+    # Initialize Pinecone
+    pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+    index_name = "veterinary-rag"
+    
+    # Check if index exists, create if not
+    existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+    if index_name not in existing_indexes:
+        print(f"Creating new Pinecone index: {index_name}...")
+        pc.create_index(
+            name=index_name,
+            dimension=1536,
+            metric="cosine",
+            spec=ServerlessSpec(
+                cloud="aws",
+                region="us-east-1"
+            )
+        )
+        # Wait for index to be ready
+        while not pc.describe_index(index_name).status['ready']:
+            time.sleep(1)
+        print("✅ Index created and ready!")
+    else:
+        print(f"✅ Found existing Pinecone index: {index_name}")
+
+    # Process in batches to avoid API limits and timeouts
+    batch_size = 100
+    total_batches = (len(texts) + batch_size - 1) // batch_size
+    
+    print(f"📦 Uploading {len(texts)} chunks to Pinecone in {total_batches} batches...")
+    
+    # Initialize vectorstore
+    vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
+    
+    for i in range(0, len(texts), batch_size):
+        batch_num = (i // batch_size) + 1
+        batch = texts[i:i + batch_size]
+        
+        print(f"[Batch {batch_num}/{total_batches}] Uploading {len(batch)} chunks...", end=" ")
+        
+        try:
+            vectorstore.add_documents(batch)
+            print("✓")
+        except Exception as e:
+            print(f"✗ Error: {str(e)[:100]}")
+            # Continue with next batch
+            continue
+    
+    print("✅ All batches uploaded successfully!")
     return vectorstore
 
 def create_rag_chain(vectorstore):

@@ -44,6 +44,8 @@ documents/*.docx
 documents/*.txt
 !documents/.gitkeep
 vectorstore/
+vectorstore_cache/
+documents_backup/
 *.db
 *.sqlite
 

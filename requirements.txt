@@ -11,3 +11,6 @@ openpyxl
 beautifulsoup4
 lxml
 unstructured
+pinecone-client
+langchain-pinecone
+gunicorn

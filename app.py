@@ -61,8 +61,8 @@ def ask():
             return jsonify({'error': 'RAG 시스템이 초기화되지 않았습니다.'}), 500
         
         # Get answer from RAG system
-        result = qa_chain.invoke({"query": question})
-        answer = result["result"]
+        result = qa_chain.invoke({"input": question})
+        answer = result.get("answer", "")
         
         return jsonify({
             'answer': answer,

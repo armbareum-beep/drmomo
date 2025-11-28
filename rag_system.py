@@ -15,7 +15,7 @@ from pinecone import Pinecone, ServerlessSpec
 import time
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_community.chains import RetrievalQA
+
 
 # Load environment variables
 load_dotenv()
@@ -186,13 +186,18 @@ def load_and_process_documents(file_paths=None, folder_path=None):
     print("✅ All batches uploaded successfully!")
     return vectorstore
 
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+
+# ... (imports remain the same)
+
 def create_rag_chain(vectorstore):
     """
-    Creates a RetrievalQA chain with the specific veterinary prompt.
+    Creates a retrieval chain with the specific veterinary prompt.
     """
-    llm = ChatOpenAI(model_name="gpt-4o", temperature=0) # Using gpt-4o for better reasoning
+    llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
 
-    # Define the prompt template based on user requirements
+    # Define the prompt template
     prompt_template = """수의학RAG
 
 당신은 수의학 전문 어시스턴트입니다.
@@ -214,7 +219,7 @@ RAG 검색을 통해 가져온 내용입니다.
 {context}
 
 [질문]
-{question}
+{input}
 
 위 규칙을 지켜서 한국어로 명확하고 구조적으로 답변하세요:
 
@@ -225,15 +230,16 @@ RAG 검색을 통해 가져온 내용입니다.
 """
     
     PROMPT = PromptTemplate(
-        template=prompt_template, input_variables=["context", "question"]
+        template=prompt_template, input_variables=["context", "input"]
     )
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(),
-        chain_type_kwargs={"prompt": PROMPT},
-        return_source_documents=True 
+    # Create document chain
+    document_chain = create_stuff_documents_chain(llm, PROMPT)
+    
+    # Create retrieval chain
+    retrieval_chain = create_retrieval_chain(
+        vectorstore.as_retriever(),
+        document_chain
     )
 
-    return qa_chain
+    return retrieval_chain

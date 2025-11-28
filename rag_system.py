@@ -270,8 +270,14 @@ RAG 검색을 통해 가져온 내용입니다.
         template=prompt_template, input_variables=["context", "input"]
     )
 
+    # Define document prompt to include metadata
+    document_prompt = PromptTemplate(
+        input_variables=["page_content", "source", "page"],
+        template="[문서: {source} | 페이지: {page}]\n{page_content}"
+    )
+
     # Create document chain
-    document_chain = create_stuff_documents_chain(llm, PROMPT)
+    document_chain = create_stuff_documents_chain(llm, PROMPT, document_prompt=document_prompt)
     
     # Create retrieval chain
     retrieval_chain = create_retrieval_chain(

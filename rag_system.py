@@ -193,16 +193,20 @@ def get_pinecone_vectorstore():
     """
     print("🔄 Connecting to Pinecone...")
     
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    openai_api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("openAI")
     if not openai_api_key:
         # Debug: Print available keys to help diagnose
         print(f"❌ DEBUG: Available environment keys: {list(os.environ.keys())}")
-        raise ValueError("OPENAI_API_KEY environment variable is not set")
+        raise ValueError("OPENAI_API_KEY (or openAI) environment variable is not set")
         
     embeddings = OpenAIEmbeddings(api_key=openai_api_key)
     
     # Initialize Pinecone
-    pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+    pinecone_api_key = os.environ.get("PINECONE_API_KEY") or os.environ.get("pinecone")
+    if not pinecone_api_key:
+        raise ValueError("PINECONE_API_KEY (or pinecone) environment variable is not set")
+        
+    pc = Pinecone(api_key=pinecone_api_key)
     index_name = "veterinary-rag"
     
     # Check if index exists

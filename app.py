@@ -10,10 +10,11 @@ app.secret_key = os.urandom(24)
 
 # Global variable to store the QA chain
 qa_chain = None
+init_error = None
 
 def initialize_rag_system():
     """Initialize the RAG system with Pinecone"""
-    global qa_chain
+    global qa_chain, init_error
     
     print("="*70)
     print("🔄 Initializing Pinecone RAG System...")
@@ -30,6 +31,7 @@ def initialize_rag_system():
         print("="*70)
         
     except Exception as e:
+        init_error = str(e)
         print(f"❌ Error initializing RAG system: {e}")
         # Don't raise here, let the app start even if RAG fails (though it won't work)
         # In production logs this will be visible
@@ -53,7 +55,10 @@ def ask():
             return jsonify({'error': '질문을 입력해주세요.'}), 400
         
         if qa_chain is None:
-            return jsonify({'error': 'RAG 시스템이 초기화되지 않았습니다.'}), 500
+            error_msg = 'RAG 시스템이 초기화되지 않았습니다.'
+            if init_error:
+                error_msg += f' (초기화 오류: {init_error})'
+            return jsonify({'error': error_msg}), 500
         
         # Get answer from RAG system
         result = qa_chain.invoke({"input": question})
@@ -75,7 +80,8 @@ def health():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'rag_initialized': qa_chain is not None
+        'rag_initialized': qa_chain is not None,
+        'init_error': init_error
     })
 
 if __name__ == '__main__':

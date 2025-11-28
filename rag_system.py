@@ -228,7 +228,11 @@ def create_rag_chain(vectorstore):
     """
     Creates a retrieval chain with the specific veterinary prompt.
     """
-    llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
+    openai_api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("openAI")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY (or openAI) environment variable is not set")
+        
+    llm = ChatOpenAI(model_name="gpt-4o", temperature=0, api_key=openai_api_key)
 
     # Define the prompt template
     prompt_template = """수의학RAG

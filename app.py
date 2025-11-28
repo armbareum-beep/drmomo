@@ -37,11 +37,49 @@ def initialize_rag_system():
 # Initialize on module load for Gunicorn
 initialize_rag_system()
 
+@app.route('/')
+def index():
+    """Main page"""
+    return render_template('index.html')
+
+@app.route('/api/ask', methods=['POST'])
+def ask():
+    """API endpoint for asking questions"""
+    try:
+        data = request.get_json()
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return jsonify({'error': '질문을 입력해주세요.'}), 400
+        
+        if qa_chain is None:
+            return jsonify({'error': 'RAG 시스템이 초기화되지 않았습니다.'}), 500
+        
+        # Get answer from RAG system
+        result = qa_chain.invoke({"input": question})
+        answer = result.get("answer", "")
+        
+        return jsonify({
+            'answer': answer,
+            'success': True
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'오류가 발생했습니다: {str(e)}',
+            'success': False
+        }), 500
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'rag_initialized': qa_chain is not None
+    })
+
 if __name__ == '__main__':
     print("=== Veterinary RAG Web Interface ===")
-    print("\n🌐 Starting web server...")
-    print("📍 Open your browser and go to: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
     print("\n🌐 Starting web server...")
     print("📍 Open your browser and go to: http://localhost:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)

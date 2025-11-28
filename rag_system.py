@@ -185,7 +185,6 @@ def load_and_process_documents(file_paths=None, folder_path=None):
             continue
     
     print("✅ All batches uploaded successfully!")
-    print("✅ All batches uploaded successfully!")
     return vectorstore
 
 def get_pinecone_vectorstore():
@@ -193,7 +192,12 @@ def get_pinecone_vectorstore():
     Connects to the existing Pinecone index without loading new documents.
     """
     print("🔄 Connecting to Pinecone...")
-    embeddings = OpenAIEmbeddings()
+    
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+        
+    embeddings = OpenAIEmbeddings(api_key=openai_api_key)
     
     # Initialize Pinecone
     pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))

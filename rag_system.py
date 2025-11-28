@@ -15,7 +15,8 @@ from pinecone import Pinecone, ServerlessSpec
 import time
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 # Load environment variables
 load_dotenv()
@@ -186,10 +187,7 @@ def load_and_process_documents(file_paths=None, folder_path=None):
     print("✅ All batches uploaded successfully!")
     return vectorstore
 
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 
-# ... (imports remain the same)
 
 def create_rag_chain(vectorstore):
     """

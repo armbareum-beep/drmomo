@@ -215,7 +215,11 @@ def get_pinecone_vectorstore():
         raise ValueError(f"Index {index_name} does not exist. Please run locally to upload documents first.")
     
     print(f"✅ Found existing Pinecone index: {index_name}")
-    vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
+    vectorstore = PineconeVectorStore(
+        index_name=index_name, 
+        embedding=embeddings,
+        pinecone_api_key=pinecone_api_key
+    )
     return vectorstore
 
 
